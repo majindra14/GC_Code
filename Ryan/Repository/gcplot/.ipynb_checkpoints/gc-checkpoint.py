@@ -16,9 +16,36 @@ class bcolors:
     WARNING = '\033[93m' #YELLOW
     FAIL = '\033[91m' #RED
     RESET = '\033[0m' #RESET COLOR
+
+    
+def red(text):
+    """
+    Returns a string that is red when printed
+    """
+    return bcolors.FAIL + text + bcolors.RESET 
+
+
+def yellow(text):
+    """
+    Returns a string that is yellow when printed
+    """
+    return bcolors.WARNING + text + bcolors.RESET
+
+
+def green(text):
+    """
+    Returns a string that is green when printed
+    """
+    return bcolors.OK + text + bcolors.RESET
     
 
 def load_data(file_list, sheet, remove_sample_list, remove_product_list, output = False):
+    """
+    This function gets all the corrected concentration data from each file in file_list, removes samples and products specified
+    by remove_sample_list and remove_product_list, and arranges the data into a dataframe. A master_sample_list is also generated
+    which contains the list of all samples in the dataframe, and df_dict holds the dataframes from each individual file, in case
+    analysis needs to be done on single files. This function also outputs information detected from each file for troubleshooting.
+    """
     # Make sure file_list is a list, even if it's a single string
     file_list = [file_list] if isinstance(file_list, str) else file_list
     # Create empty dataframe to hold all data
@@ -27,6 +54,10 @@ def load_data(file_list, sheet, remove_sample_list, remove_product_list, output 
     df_dict = {}
     # List to hold all sample names for review if desired. Also used to filter duplicate samples across multiple spreadsheets
     master_sample_list = []
+    
+    # Create progress bar
+    if not output:
+        print('Progress: |', end = '')
     
     for file in file_list:
         # Get the corrected concentration data
@@ -73,20 +104,16 @@ def load_data(file_list, sheet, remove_sample_list, remove_product_list, output 
             for i in range(len(color_sample_list) - 1):
                 print('\'' + color_sample_list[i] + '\'', end = ', ')
             print('\'' + color_sample_list[-1] + '\'', end = ']\n')
-                
+        else:
+            print('#', end = '')
         # Update master sample list
         master_sample_list.extend(sample_list_kept)
+    
+    if not output:
+        print('|')
+        
+    print('\033[1m' + 'Done!' + '\033[0m')
     return master_df, master_sample_list, df_dict
-
-
-def red(text):
-    return bcolors.FAIL + text + bcolors.RESET 
-
-def yellow(text):
-    return bcolors.WARNING + text + bcolors.RESET
-
-def green(text):
-    return bcolors.OK + text + bcolors.RESET
 
 
 def getCorrectedConcentration(file, sheet):
@@ -191,7 +218,11 @@ def summary_stats(df, sample_order = None, product_order = None):
     
     return summary_stats
 
+
 def set_hatch(ax, chains):
+    """
+    Takes an axis object and sets the hatch property so that the presence of hatches alternates
+    """
     bars = ax.patches
     # List of hatch patterns for each bar
     patterns = (['']*len(ax.get_xticks()) + ['\\']*len(ax.get_xticks()))*len(chains)
@@ -202,13 +233,18 @@ def set_hatch(ax, chains):
 
 
 def save_df_to_excel(df, filename, sheet_name, replace = False):
+    """
+    Saves a dataframe to an Excel file with name <filename> in sheet <sheet_name>. Several warnings
+    """
+    # Get file path and check if it exists
     file_path = os.path.join(os.getcwd(), filename)
-    print(file_path)
     file_exists = os.path.exists(file_path)
     
-    if not file_exists:
+    # If the file doesnt exist, or if the user wants to replace the existing file, create the file.
+    if not file_exists or replace:
         df.to_excel(filename, sheet_name = sheet_name)            
         print('Done!')
+    # Otherwise...
     else:
         # Generate workbook
         wb = load_workbook(file_path)
@@ -217,31 +253,22 @@ def save_df_to_excel(df, filename, sheet_name, replace = False):
         # Assigning the workbook to the writer engine
         writer.book = wb
         
+        # If the sheet already exists in the file
         if sheet_name in wb.sheetnames:
-            print('The sheet name, ' + sheet_name + ', already exists in ' + filename + '.')
-            proceed = input('Existing data in ' + sheet_name + ' will be replaced with new data. Proceed? Yes/No: ')
+            # Prompt user to see if they want to replace the existing sheet
+            print('The sheet name \'' + sheet_name + '\' already exists in ' + filename + '.')
+            proceed = input('Existing data in \'' + sheet_name + '\' will be replaced with new data. Proceed? Yes/No: ')
+            # If they want to replace the existing sheet, then do it
             if proceed.lower() in ['yes','ye','y']:
                 df.to_excel(writer, sheet_name = sheet_name)
                 print('Done!')
+            # Otherwise, do nothing
             else:
                 print('Operation cancelled.')
+        # If sheet doesn't exist, create it and save the dataframe to it.
         else:
             df.to_excel(writer, sheet_name = sheet_name)
-            print('New sheet, ' + sheet_name + ', added to ' + filename + '\nDone!')
+            print('New sheet \'' + sheet_name + '\', added to ' + filename + '\nDone!')
+        # Save and close writer
         writer.save()
         writer.close()
-        
-def old():
-    if file_exists and not replace:
-        print(os.path.join(os.getcwd(), filename), 'already exists.\nChange filename or set replace to \033[1mTrue\033[1m.')
-        return None
-    elif file_exists and replace:
-        proceed = input('Exisitng file will be replaced with new file. Proceed? Yes/No: ')
-        if proceed.lower() in ['yes','ye','y']:
-            df.to_excel(filename, sheet_name = sheet_name)
-            print('Existing file replaced with new.\nDone!')
-        else:
-            print('Operation cancelled.')
-    else:
-        df.to_excel(filename, sheet_name = sheet_name)            
-        print('Done!')
