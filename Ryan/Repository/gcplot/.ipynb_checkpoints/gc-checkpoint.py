@@ -123,7 +123,7 @@ def getCorrectedConcentration(file, sheet):
     """
     # Read excel file
     wb = openpyxl.load_workbook(file)
-    df = pd.read_excel(file, sheetname=sheet)
+    df = pd.read_excel(file, sheet_name=sheet)
     
     # Get sample names from first column by filtering for strings only and not counting rows with 'Peak#'. Rename to 'Sample Names'
     sample_names = df[pd.to_numeric(df[0], errors='coerce').isnull()][0][df[0] != 'Peak#'].dropna().to_frame().rename(columns={0:'Sample Names'})

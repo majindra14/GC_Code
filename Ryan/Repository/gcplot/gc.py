@@ -123,7 +123,7 @@ def getCorrectedConcentration(file, sheet):
     """
     # Read excel file
     wb = openpyxl.load_workbook(file)
-    df = pd.read_excel(file, sheetname=sheet)
+    df = pd.read_excel(file, sheet_name=sheet)
     
     # Get sample names from first column by filtering for strings only and not counting rows with 'Peak#'. Rename to 'Sample Names'
     sample_names = df[pd.to_numeric(df[0], errors='coerce').isnull()][0][df[0] != 'Peak#'].dropna().to_frame().rename(columns={0:'Sample Names'})
@@ -145,7 +145,7 @@ def getCorrectedConcentration(file, sheet):
 def dataParse(df, sample_order = None, product_order = None):
     """
     Uses cleaned Corrected Concentration dataframe to calculate triplicate averages (scaled and absolute) and standard errors
-    Returns two dataframes (average and standard error) with rows corresponding to samples and columns corresponding to products
+    Returns three dataframes (average, scaled, and standard error) with rows corresponding to samples and columns corresponding to products
     """
     # Calculate means, scaled means, and standard errors using pivot table-like operation
     df_mean = pd.pivot_table(df, values = 'Corrected Concentration', index = ['Sample Group'], columns = ['Products'])
@@ -240,9 +240,17 @@ def save_df_to_excel(df, filename, sheet_name, replace = False):
     file_path = os.path.join(os.getcwd(), filename)
     file_exists = os.path.exists(file_path)
     
-    # If the file doesnt exist, or if the user wants to replace the existing file, create the file.
+    # If the file doesnt exist, or if the user wants to replace the existing file, create the file, but check one more time with user.
     if not file_exists or replace:
-        df.to_excel(filename, sheet_name = sheet_name)            
+        if replace and file_exists:
+            proceed = ('Existing file will be replaced. Proceed? Yes/No: ')
+            if proceed.lower() in ['yes','ye','y']:
+                df.to_excel(filename, sheet_name = sheet_name)
+            else:
+                print('Operation cancelled')
+                return
+        else:
+            df.to_excel(filename, sheet_name = sheet_name)            
         print('Done!')
     # Otherwise...
     else:
