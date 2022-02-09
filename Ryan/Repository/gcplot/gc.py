@@ -216,7 +216,7 @@ def summary_stats(df, sample_order = None, product_order = None):
     # Update column names with '%' symbol
     summary_stats.columns = ['% ' + str(product) if product != 'Source File' and product != 'mg/L' else str(product) for product in summary_stats.columns]
     
-    return summary_stats, total_stats, source_files, init_stats
+    return summary_stats
 
 
 def set_hatch(ax, chains):
