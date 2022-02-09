@@ -145,7 +145,7 @@ def getCorrectedConcentration(file, sheet):
 def dataParse(df, sample_order = None, product_order = None):
     """
     Uses cleaned Corrected Concentration dataframe to calculate triplicate averages (scaled and absolute) and standard errors
-    Returns two dataframes (average and standard error) with rows corresponding to samples and columns corresponding to products
+    Returns three dataframes (average, scaled, and standard error) with rows corresponding to samples and columns corresponding to products
     """
     # Calculate means, scaled means, and standard errors using pivot table-like operation
     df_mean = pd.pivot_table(df, values = 'Corrected Concentration', index = ['Sample Group'], columns = ['Products'])
@@ -210,13 +210,13 @@ def summary_stats(df, sample_order = None, product_order = None):
         summary_stats = summary_stats.reindex(index = sample_order_filt)
     # If product order is provided, then change order
     if product_order != None:
-        product_order_filt = [product for product in product_order if product in sample_stats] + ['Source File']
+        product_order_filt = [product for product in product_order if product in sample_stats] + ['mg/L'] + ['Source File']
         summary_stats = summary_stats[product_order_filt]
     
     # Update column names with '%' symbol
-    summary_stats.columns = ['% ' + str(product) if product != 'Source File' else str(product) for product in summary_stats.columns]
+    summary_stats.columns = ['% ' + str(product) if product != 'Source File' and product != 'mg/L' else str(product) for product in summary_stats.columns]
     
-    return summary_stats
+    return summary_stats, total_stats, source_files, init_stats
 
 
 def set_hatch(ax, chains):
@@ -240,9 +240,17 @@ def save_df_to_excel(df, filename, sheet_name, replace = False):
     file_path = os.path.join(os.getcwd(), filename)
     file_exists = os.path.exists(file_path)
     
-    # If the file doesnt exist, or if the user wants to replace the existing file, create the file.
+    # If the file doesnt exist, or if the user wants to replace the existing file, create the file, but check one more time with user.
     if not file_exists or replace:
-        df.to_excel(filename, sheet_name = sheet_name)            
+        if replace and file_exists:
+            proceed = ('Existing file will be replaced. Proceed? Yes/No: ')
+            if proceed.lower() in ['yes','ye','y']:
+                df.to_excel(filename, sheet_name = sheet_name)
+            else:
+                print('Operation cancelled')
+                return
+        else:
+            df.to_excel(filename, sheet_name = sheet_name)            
         print('Done!')
     # Otherwise...
     else:

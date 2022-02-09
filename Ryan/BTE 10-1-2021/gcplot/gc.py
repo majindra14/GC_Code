@@ -210,13 +210,13 @@ def summary_stats(df, sample_order = None, product_order = None):
         summary_stats = summary_stats.reindex(index = sample_order_filt)
     # If product order is provided, then change order
     if product_order != None:
-        product_order_filt = [product for product in product_order if product in sample_stats] + ['mg/L'] + ['Source File']
+        product_order_filt = [product for product in product_order if product in sample_stats] + ['Source File']
         summary_stats = summary_stats[product_order_filt]
     
     # Update column names with '%' symbol
-    summary_stats.columns = ['% ' + str(product) if product != 'Source File' and product != 'mg/L' else str(product) for product in summary_stats.columns]
+    summary_stats.columns = ['% ' + str(product) if product != 'Source File' else str(product) for product in summary_stats.columns]
     
-    return summary_stats, total_stats, source_files, init_stats
+    return summary_stats
 
 
 def set_hatch(ax, chains):
