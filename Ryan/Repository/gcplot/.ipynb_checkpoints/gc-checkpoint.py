@@ -69,14 +69,14 @@ def load_data(file_list, sheet, remove_sample_list, remove_product_list, output 
         # Identify which were removed due to remove_sample_list
         removed = list(set(df['Sample Group']) & set(remove_sample_list))
         # Identify which were removed due to duplicates
-        duplicates = list(set(df_removed['Sample Group']) & set(master_sample_list))
+        duplicates = list(set(df_removed_dup['Sample Group']) & set(master_sample_list))
         # Identify which were kept after removal from remove_sample_list (not duplicates)
         sample_list_kept = list(df_removed['Sample Group'].unique())
         
         # Update dataframe dictionary
         df_dict[file] = df
         # Update master dataframe
-        master_df = master_df.append(df_removed).reset_index(drop = True)
+        master_df = master_df.append(df_removed_dup).reset_index(drop = True)
         
         # Remove products that are in remove_product_list
         master_df = master_df[~master_df['Products'].isin(remove_product_list)]
@@ -194,7 +194,7 @@ def summary_stats(df, sample_order = None, product_order = None):
     sample_stats = sample_mean + '±' + sample_err
 
     # Calculate mean and standard error of total titer for each sample group and change data-type to string to allow string combination of '±' sign
-    total_mean = tot_titer.groupby('Sample Group').first()['Corrected Concentration'].map(('{:,.' + str(3) + 'g}').format).astype(str)
+    total_mean = tot_titer.groupby('Sample Group').mean()['Corrected Concentration'].map(('{:,.' + str(3) + 'g}').format).astype(str)
     total_err = tot_titer.groupby('Sample Group').sem()['Corrected Concentration'].map(('{:,.' + str(3) + 'g}').format).astype(str)
     total_stats = (total_mean + '±' + total_err).to_frame().rename(columns = {'Corrected Concentration':'mg/L'})
     
